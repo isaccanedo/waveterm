@@ -1,0 +1,81 @@
+---
+sidebar_position: 3.1
+id: "connections"
+title: "Connections"
+---
+
+# Connections
+
+Wave allows users to connect to various machines and unify them together in a way that preserves the unique behavior of each. At the moment, this extends to SSH remote connections and local WSL connections.
+
+## Access a Connection in a Block
+
+The easiest way to access connections is to click the <i className="fa-sharp fa-laptop"/> icon. From there, you can either type `[user]@[host]` for a desired SSH remote or type `wsl://<distribution name>` for a desired WSL distribution. Alternatively, if the connection already exists in the dropdown list, you can either click it or navigate to it with arrow keys and press enter to connect.
+
+![a dropdown showing a list of connections that already exist](./img/connection-dropdown.png)
+
+## What are wsh Shell Extensions?
+
+`wsh` is a small program that helps manage waveterm regardless of which machine you are currently connected to. It is always included on your host machine, but you also have the option to install it when connecting to a remote machine. If it is installed on the remote machine, it is installed at `~/.waveterm/bin/wsh`. Then, when wave connects to your connection (and only when wave connects to your connection), `~/.waveterm/bin` is added to your `PATH` for that individual session. If this fails for some reason, Wave will attempt to run without wsh. You will see this indicated by a small **<code><i className="fa-link-slash fa-solid fa-sharp"/></code>** icon in the block header. For more info on what `wsh` is capable of, see [wsh command](/wsh). And if you wish to view the source code of `wsh`, you can find it [here](https://github.com/wavetermdev/waveterm/tree/main/cmd/wsh).
+
+With `wsh` installed, you have the ability to view certain widgets from the remote machine as if it were your host. In addition, `wsh` can be used to influence the widgets across various machines. As a very simple example, you can close a widget on the host machine by using the `wsh` command in a terminal window on a remote machine. For more information on what you can accomplish with `wsh`, take a look [here](/wsh).
+
+## Add a New Connection to the Dropdown
+
+The SSH values that are loaded into the dropdown by default are obtained by parsing the internal `config/connections.json` file in addition to your `~/.ssh/config` and `/etc/ssh/ssh_config` files. Adding a new connection can be added in a couple ways:
+
+- adding a new `Host` to one of your ssh config files, typically the `~/.ssh/config` file
+- adding a new entry in the internal `config/connections.json` file
+- manually typing your connection into the connection box (if this successfully connects, the connection will be added to the internal `config/connections.json` file)
+- use `wsh ssh [user]@[host]` in your terminal (if this successfully connects, the connection will be added to the internal `config/connections.json` file)
+
+WSL values are added by searching the installed WSL distributions as they appear in the Windows Registry.
+
+## SSH Config Parsing
+
+At the moment, we are capable of parsing any SSH config file that does not contain the `Match` keyword. This keyword is incompatible with a library we are using, but we are hoping to fix that soon. While all other valid keywords are parsed, we only support the functionality of a small subset of them at the moment:
+| Keyword | Description |
+|---------|-------------|
+| Host | The pattern to match when attempting to connect via `[user]@[host]`. We list hosts that do not contain any wildcards characters (`*`, `?`, or `!`). Even if a host pattern contains wildcards, it will still be parsed when determining the values associated with the keys as usual.|
+| User | The user of the SSH remote connection. This will default to the current user on the local machine if not specified.|
+| Port | The port to connect to the remote on. `22` is the default if not specified.|
+| IdentityFile | This can be specified more than once per host. It gives the path to a private identity file (id_rsa, id_ed25519, id_ecdsa, etc.) that is used to authenticate the connection. Each will be tried in order, and they can be encrypted with a passphrase if desired. If no value is set, the default is to try in order: ~/.ssh/id_rsa, ~/.ssh/id_ecdsa, ~/.ssh/id_ecdsa_sk, ~/.ssh/id_ed25519_sk, ~/.ssh/id_dsa.|
+|BatchMode| If set to true, user interaction via password, challenge/response, and publickey passphrase authentication will be disabled. It is set to false by default.|
+|PubkeyAuthentication| (partial) This is used to specify if pubkey authentication should be attempted. It is partially implementented as the `unbound` and `host-bound` values simply work the same as the `yes` value. The default is `yes`.|
+|PasswordAuthentication| This is used to specify if password authentication should be attempted. The default is `yes`.|
+|KbdInteractiveAuthentication| This is used to specify if keyboard-interactive authentication should be attempted. The default is `yes`.|
+|PreferredAuthentications| (partial) Specifies the order the client should attempt to authenticate in. It is partially implemented as it does not support `gssapi-with-mic` or `hostbased` authentication. The default is `publickey,keyboard-interactive,password`|
+|AddKeysToAgent| (partial) This option will automatically add keys and their corresponding passphrase to your running ssh agent if it is enabled. It is partially supported as it can only accept `yes` and `no` as valid inputs. Other inputs such as `confirm` or a time interval will behave the same as `no`. The default value is `no`.|
+|ProxyJump| Specifies one or more jump proxies in a comma separated list. Each will be visited sequentially using TCP forwarding before connecting to the desired connection (also using TCP forwarding). It can be set to `none` to disable the feature.|
+
+### Example SSH Config Host
+
+For a quick example, a host in your config file may look like:
+
+```
+Host myhost
+   User username
+   HostName 203.0.113.254
+   IdentityFile ~/.ssh/id_rsa
+   AddKeysToAgent yes
+```
+
+You would then be able to access this connection with `myhost` or `username@myhost`. And if you wanted to manually specify a port such as port 2222, you could do that by either adding `Port 2222` to the config file or connecting to `username@myhost:2222`.
+
+## Internal SSH Configuration
+
+In addition to the regular ssh config file, wave also has its own config file to manage separate variables. These include
+| Keyword | Description |
+|---------|-------------|
+| conn:wshenabled | This boolean allows wsh to be used for your connection, if it is set to `false`, `wsh` will never be used for that connection. It defaults to `true`.|
+| conn:askbeforewshinstall | This boolean is used to prompt the user before installing wsh. If it is set to false, `wsh` will automatically be installed instead without prompting. It defaults to `true`.|
+| display:hidden | This boolean hides the connection from the dropdown list. It defaults to `false` |
+| display:order | This float determines the order of connections in the connection dropdown. It defaults to `0`.|
+| term:fontsize | This int can be used to override the terminal font size for blocks using this connection. The block metadata takes priority over this setting. It defaults to null which means the global setting will be used instead. |
+| term:fontfamily | This string can be used to specify a terminal font family for blocks using this connection. The block metadata takes priority over this setting. It defaults to null which means the global setting will be used instead. |
+| term:theme | This string can be used to specify a terminal theme for blocks using this connection. The block metadata takes priority over this setting. It defaults to null which means the global setting will be used instead. |
+| ssh:identityfile | A list of strings containing the paths to identity files that will be used. If a `wsh ssh` command using the `-i` flag is successful, the identity file will automatically be added here. |
+
+## Managing Connections with the CLI
+
+The `wsh` command gives some commands specifically for interacting with the connections. You can view these [here](/wsh-reference#conn).

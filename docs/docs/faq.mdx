@@ -1,0 +1,32 @@
+---
+sidebar_position: 101
+id: "faq"
+title: "FAQ"
+---
+
+# FAQ
+
+### How do I configure Wave to use different AI models/providers?
+
+Wave supports various AI providers including local LLMs (via Ollama), Azure OpenAI, Anthropic's Claude, and Perplexity. The recommended way to configure these is through AI presets, which let you set up and easily switch between different providers and models.
+
+See our [AI Presets documentation](/ai-presets) for detailed setup instructions for each provider.
+
+### How can I see the block numbers?
+
+The block numbers will appear when you hold down Ctrl-Shift (and disappear once you release the key combo).
+
+### How do I make a remote connection?
+
+There is a button in the header. Click the <i className="fa-sharp fa-laptop"/> or <i className="fa-sharp fa-arrow-right-arrow-left"/>
+and type the `[user]@[host]` that you wish to connect to.
+
+### On Windows, how can I use Git Bash as my default shell?
+
+In order to make Git Bash your default shell you'll need to set the configuration variable `term:localshellpath` to
+the location of the Git Bash "bash.exe" binary. By default it is located at "C:\Program Files\Git\bin\bash.exe".
+Just remember in JSON, backslashes need to be escaped. So add this to your [settings.json](./config) file:
+
+```json
+    "term:localshellpath": "C:\\Program Files\\Git\\bin\\bash.exe"
+```
